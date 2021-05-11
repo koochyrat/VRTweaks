@@ -1,4 +1,7 @@
 ﻿using HarmonyLib;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 using UnityEngine;
 
 namespace VRTweaks
@@ -45,6 +48,44 @@ namespace VRTweaks
             Traverse.Create(__instance).Field("colorBuffers").SetValue(colorBuffers);
 
             return false;
+        }
+
+        // Need to replace texture dimension check with dimension we use
+        // to create the render texture targets.
+        [HarmonyPatch(typeof(WBOIT))]
+        [HarmonyPatch(nameof(WBOIT.VerifyRenderTargets))]
+        internal class VerifyRenderTargets_Patch
+        {
+
+            private static MethodInfo screenGetWidth = AccessTools.Method(typeof(Screen), "get_width");
+            private static MethodInfo screenGetHeight = AccessTools.Method(typeof(Screen), "get_height");
+
+            static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                var original = new List<CodeInstruction>(instructions);
+                var patched = new List<CodeInstruction>();
+                for (int i = 0; i < original.Count; i++)
+                {
+                    var instruction = original[i];
+                    if (instruction.Calls(screenGetHeight))
+                    {
+                        patched.Add(new CodeInstruction(OpCodes.Ldarg_0));
+                        patched.Add(CodeInstruction.LoadField(typeof(WBOIT), "camera"));
+                        patched.Add(CodeInstruction.Call(typeof(Camera), "get_pixelHeight"));
+                    }
+                    else if (instruction.Calls(screenGetWidth))
+                    {
+                        patched.Add(new CodeInstruction(OpCodes.Ldarg_0));
+                        patched.Add(CodeInstruction.LoadField(typeof(WBOIT), "camera"));
+                        patched.Add(CodeInstruction.Call(typeof(Camera), "get_pixelWidth"));
+                    }
+                    else
+                    {
+                        patched.Add(instruction);
+                    }
+                }
+                return patched;
+            }
         }
     }
 }
