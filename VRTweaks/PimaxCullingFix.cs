@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using HarmonyLib;
+using UWEXR;
 
 namespace VRTweaks
 {
@@ -90,6 +91,32 @@ namespace VRTweaks
             {
                 File.AppendAllText("VRTweaksLog.txt", "Pimax error "+ e.Message + Environment.NewLine + e.StackTrace + Environment.NewLine);
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(SNCameraRoot), nameof(SNCameraRoot.UpdateVR))]
+    public class SNCameraRoot_Patch
+    {
+        static bool Prefix(SNCameraRoot __instance)
+        {
+            if (!XRSettings.enabled)
+                return false;
+
+            float num = __instance.mainCamera.stereoSeparation;
+            if (Mathf.Abs(__instance.stereoSeparation - num) < 1E-05f)
+            {
+                return false;
+            }
+            float yawAngle = PimaxCullingInit.cantingAngle * Mathf.Rad2Deg; //10 deg
+            __instance.stereoSeparation = num;
+            __instance.matrixLeftEye = Matrix4x4.TRS(__instance.stereoSeparation * 0.5f * Vector3.right, Quaternion.AngleAxis(-yawAngle, Vector3.up), new Vector3(1, 1, -1));
+            __instance.matrixRightEye = Matrix4x4.TRS(-__instance.stereoSeparation * 0.5f * Vector3.right, Quaternion.AngleAxis(yawAngle, Vector3.up), new Vector3(1, 1, -1));
+
+            __instance.guiCamera.SetStereoViewMatrix(Camera.StereoscopicEye.Left, __instance.matrixLeftEye);
+            __instance.guiCamera.SetStereoViewMatrix(Camera.StereoscopicEye.Right, __instance.matrixRightEye);
+            __instance.imguiCamera.SetStereoViewMatrix(Camera.StereoscopicEye.Left, __instance.matrixLeftEye);
+            __instance.imguiCamera.SetStereoViewMatrix(Camera.StereoscopicEye.Right, __instance.matrixRightEye);
+            return false;
         }
     }
 
