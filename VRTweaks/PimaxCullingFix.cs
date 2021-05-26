@@ -29,6 +29,7 @@ namespace VRTweaks
         public static bool isCantedFov = false;
         public static IVRSystem FnTable;
         public static Matrix4x4 projectionMatrix;
+        public static float cantingAngle;
 
         [HarmonyPostfix]
         static void Start(ShaderGlobals __instance)
@@ -65,6 +66,7 @@ namespace VRTweaks
                         Mathf.Max(-l_left, l_right, -r_left, r_right),
                         Mathf.Max(-l_top, l_bottom, -r_top, r_bottom));
                     float eyeYawAngle = Mathf.Acos(eyeToHeadL.m0);  //since there are no x or z rotations, this is y only. 10 deg on Pimax
+                    cantingAngle = eyeYawAngle;
                     float eyeHalfFov = Mathf.Atan(tanHalfFov.x);
                     float tanCorrectedEyeHalfFovH = Mathf.Tan(eyeYawAngle + eyeHalfFov);
 
