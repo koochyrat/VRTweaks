@@ -102,11 +102,13 @@ namespace VRTweaks
             if (!XRSettings.enabled)
                 return false;
 
-            float num = __instance.mainCamera.stereoSeparation;
+            float num = __instance.mainCamera.stereoSeparation; //this is ipd returned from SteamVR
             if (Mathf.Abs(__instance.stereoSeparation - num) < 1E-05f)
             {
                 return false;
             }
+            //the camera's left and right projection matrix will be canted as returned from SteamVR
+            //UI requires parallel projection, so we cancel out the canting angle so that both left and right UI will line up perfectly
             float yawAngle = PimaxCullingInit.cantingAngle * Mathf.Rad2Deg; //10 deg
             __instance.stereoSeparation = num;
             __instance.matrixLeftEye = Matrix4x4.TRS(__instance.stereoSeparation * 0.5f * Vector3.right, Quaternion.AngleAxis(-yawAngle, Vector3.up), new Vector3(1, 1, -1));
