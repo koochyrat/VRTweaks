@@ -1,5 +1,5 @@
 # VRTweaks
-Subnautica Below Zero Mod to Add Tweaks for VR
+Subnautica Below Zero Mod to Add Tweaks for Pimax VR
 
 Add in Pimax specific fixes to fix culling at edges. Also fixes double vision UI.
 
